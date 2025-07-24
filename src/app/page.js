@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import VideoModal from './components/VideoModal';
+import Image from 'next/image';
+
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -173,9 +175,12 @@ export default function Home() {
                   className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden cursor-pointer"
                 >
                   <div className="relative">
-                  <img
+                  <Image
                     src={result.image}
                     alt={result.title}
+                    width={400}
+                    height={225}
+                    unoptimized
                     className="w-full h-48 object-cover object-top"
                   />
                       {result.hasVideo && result.videoUrl && (
