@@ -1,0 +1,59 @@
+name: 🚀 Deploy Next Service
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  IMAGE_NAME: healthainextapp
+  CONTAINER_NAME: healthai_ms
+  APP_DIR: /home/ediflow/health-ai-search/health-ai-search
+  SERVER_PORT: 3000
+  HOST_PORT: 4000
+
+jobs:
+  deploy:
+    name: 🐳 Build & Deploy to EC2
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.EC2_KEY }}
+
+      - name: 📤 Rsync to EC2
+        run: |
+          rsync -avz --delete \
+            --exclude 'node_modules' \
+            --exclude '.next/cache' \
+            --exclude '.git' \
+            -e "ssh -o StrictHostKeyChecking=no" \
+            ./ \
+            ${{ vars.EC2_USER }}@${{ vars.EC2_HOST }}:${{ env.APP_DIR }}
+
+      - name: 🛠️ Build & deploy on EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ vars.EC2_USER }}@${{ vars.EC2_HOST }} << 'EOF'
+            set -e
+
+            cd $APP_DIR
+
+            docker build -t $IMAGE_NAME .
+
+            if docker ps -q --filter "name=$CONTAINER_NAME" | grep -q .; then
+              docker stop $CONTAINER_NAME
+            fi
+            if docker ps -aq --filter "name=$CONTAINER_NAME" | grep -q .; then
+              docker rm $CONTAINER_NAME
+            fi
+
+            docker run -d \
+              --name $CONTAINER_NAME \
+              -p $HOST_PORT:$SERVER_PORT \
+              $IMAGE_NAME
+          EOF
