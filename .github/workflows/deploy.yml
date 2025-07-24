@@ -43,6 +43,8 @@ jobs:
 
             cd ${APP_DIR}
 
+            docker rm -f ${CONTAINER_NAME} || true
+
             # Rebuild the Docker image ('.' is the build context)
             docker build . -t ${IMAGE_NAME}
 
